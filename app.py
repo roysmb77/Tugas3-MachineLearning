@@ -4,19 +4,28 @@
 from flask import Flask, render_template, request
 import pickle
 import pandas as pd
+import os
 
-# Inisialisasi Flask
+# ======================================
+# 🔹 Inisialisasi Flask
+# ======================================
 app = Flask(__name__)
 
 # ======================================
 # 🔹 Load Model, Scaler, dan Columns
 # ======================================
-with open("credit_model.pkl", "rb") as f:
-    bundle = pickle.load(f)
+try:
+    with open("credit_model.pkl", "rb") as f:
+        bundle = pickle.load(f)
 
-model = bundle["model"]
-scaler = bundle["scaler"]
-model_columns = bundle["columns"]
+    model = bundle["model"]
+    scaler = bundle["scaler"]
+    model_columns = bundle["columns"]
+
+    print("✅ Model berhasil dimuat!")
+except Exception as e:
+    print(f"❌ Gagal memuat model: {e}")
+    model, scaler, model_columns = None, None, None
 
 # ======================================
 # 🔹 Route Halaman Utama
@@ -31,31 +40,25 @@ def home():
 @app.route("/predict", methods=["POST"])
 def predict():
     try:
-        # Ambil data dari form
+        # Ambil semua input dari form
         input_data = {k: float(v) for k, v in request.form.items()}
         df_input = pd.DataFrame([input_data])
 
-        # One-hot encoding (harus sama seperti training)
-        cat_cols = ['SEX', 'EDUCATION', 'MARRIAGE']
-        df_input = pd.get_dummies(df_input, columns=cat_cols, drop_first=True)
-
-        # Tambahkan kolom yang hilang agar sesuai dengan model
+        # Pastikan kolom sesuai dengan urutan saat training
         for col in model_columns:
             if col not in df_input.columns:
-                df_input[col] = 0
+                df_input[col] = 0  # tambahkan kolom yang hilang
 
-        # Pastikan urutan kolom sama
         df_input = df_input[model_columns]
 
-        # Scaling
+        # Scaling (menggunakan scaler dari training)
         df_scaled = scaler.transform(df_input)
 
-        # Prediksi probabilitas default
+        # Prediksi probabilitas gagal bayar
         prob = model.predict_proba(df_scaled)[0][1] * 100
 
-        # Terapkan threshold 40%
-        threshold = 40
-        pred = 1 if prob >= threshold else 0
+        # Threshold 40%
+        pred = 1 if prob >= 40 else 0
 
         hasil = "⚠️ Risiko Tinggi Gagal Bayar" if pred == 1 else "✅ Aman - Pembayaran Lancar"
 
@@ -72,4 +75,5 @@ def predict():
 # 🔹 Jalankan Aplikasi
 # ======================================
 if __name__ == "__main__":
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=True)
