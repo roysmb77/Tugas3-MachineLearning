@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prediksi Risiko Kredit Nasabah 💳</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="container mt-5 fade-in">
+    <div class="card shadow-lg p-4 rounded-4 glass-card">
+        <h2 class="text-center text-primary fw-bold mb-3">
+            💳 Prediksi Risiko Kredit Nasabah
+        </h2>
+        <p class="text-center text-secondary mb-4">Masukkan data lengkap nasabah untuk memprediksi risiko gagal bayar.</p>
+
+        <form action="/predict" method="post" id="creditForm">
+            <!-- ========== DATA NASABAH ========== -->
+            <h5 class="section-title">Data Pribadi Nasabah</h5>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label>Batas Kredit (LIMIT_BAL)</label>
+                    <input type="number" class="form-control" name="LIMIT_BAL" id="LIMIT_BAL" required>
+                </div>
+                <div class="col-md-4">
+                    <label>Jenis Kelamin</label>
+                    <select class="form-select" name="SEX" id="SEX">
+                        <option value="1">Laki-laki</option>
+                        <option value="2">Perempuan</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label>Pendidikan Terakhir</label>
+                    <select class="form-select" name="EDUCATION" id="EDUCATION">
+                        <option value="1">S2/S3</option>
+                        <option value="2">S1</option>
+                        <option value="3">SMA</option>
+                        <option value="4">Lainnya</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label>Status Pernikahan</label>
+                    <select class="form-select" name="MARRIAGE" id="MARRIAGE">
+                        <option value="1">Menikah</option>
+                        <option value="2">Lajang</option>
+                        <option value="3">Lainnya</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label>Usia</label>
+                    <input type="number" class="form-control" name="AGE" id="AGE" required>
+                </div>
+            </div>
+
+            <hr>
+
+            <!-- ========== RIWAYAT PEMBAYARAN ========== -->
+            <h5 class="section-title">Riwayat Pembayaran 6 Bulan Terakhir</h5>
+            <div class="row g-3">
+                {% for i in range(1,7) %}
+                <div class="col-md-2">
+                    <label>Bulan ke-{{ i }}</label>
+                    <select class="form-select" name="PAY_{{ i }}" id="PAY_{{ i }}">
+                        <option value="-1">Tepat waktu</option>
+                        <option value="0">Tenggat 0 bulan</option>
+                        <option value="1">Telat 1 bulan</option>
+                        <option value="2">Telat 2 bulan</option>
+                        <option value="3">Telat 3 bulan</option>
+                        <option value="4">Telat 4 bulan</option>
+                        <option value="5">Telat 5 bulan</option>
+                        <option value="6">Telat 6 bulan</option>
+                    </select>
+                </div>
+                {% endfor %}
+            </div>
+
+            <hr>
+
+            <!-- ========== TAGIHAN & PEMBAYARAN ========== -->
+            <h5 class="section-title">Informasi Tagihan & Pembayaran</h5>
+            <div class="row g-3">
+                {% for i in range(1,7) %}
+                <div class="col-md-3">
+                    <label>Tagihan Bulan {{ i }}</label>
+                    <input type="number" class="form-control" name="BILL_AMT{{ i }}" id="BILL_AMT{{ i }}">
+                </div>
+                <div class="col-md-3">
+                    <label>Pembayaran Bulan {{ i }}</label>
+                    <input type="number" class="form-control" name="PAY_AMT{{ i }}" id="PAY_AMT{{ i }}">
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- ========== BUTTONS ========== -->
+            <div class="text-center mt-4">
+                <button type="submit" class="btn btn-primary px-5 py-2 fw-semibold">Prediksi</button>
+                <button type="button" class="btn btn-outline-secondary ms-2 px-4" id="fillSafe">Isi Contoh Aman</button>
+                <button type="button" class="btn btn-outline-danger ms-2 px-4" id="fillRisk">Isi Contoh Berisiko</button>
+            </div>
+        </form>
+
+        {% if prediction_text %}
+        <div class="result-box text-center mt-4 p-3 rounded-3 shadow-sm fade-in">
+            <h5>{{ prediction_text }}</h5>
+            {% if probability_text %}
+            <div class="progress mt-3" style="height: 25px;">
+                <div class="progress-bar 
+                    {% if '⚠️' in prediction_text %}bg-danger{% else %}bg-success{% endif %}" 
+                    role="progressbar" 
+                    style="width: {{ probability_text }};">
+                    {{ probability_text }}
+                </div>
+            </div>
+            {% endif %}
+            <a href="/" class="btn btn-outline-primary mt-3">Input Data Baru</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+document.getElementById("fillSafe").addEventListener("click", function() {
+    const data = {
+        LIMIT_BAL: 200000,
+        SEX: 1,
+        EDUCATION: 2,
+        MARRIAGE: 1,
+        AGE: 30,
+        PAY_1: -1, PAY_2: -1, PAY_3: -1, PAY_4: 0, PAY_5: 0, PAY_6: 0,
+        BILL_AMT1: 12000, BILL_AMT2: 13000, BILL_AMT3: 14000,
+        BILL_AMT4: 15000, BILL_AMT5: 16000, BILL_AMT6: 17000,
+        PAY_AMT1: 12000, PAY_AMT2: 13000, PAY_AMT3: 14000,
+        PAY_AMT4: 15000, PAY_AMT5: 16000, PAY_AMT6: 17000
+    };
+    Object.keys(data).forEach(k => document.getElementById(k).value = data[k]);
+});
+
+document.getElementById("fillRisk").addEventListener("click", function() {
+    const data = {
+        LIMIT_BAL: 50000,
+        SEX: 2,
+        EDUCATION: 3,
+        MARRIAGE: 2,
+        AGE: 45,
+        PAY_1: 3, PAY_2: 4, PAY_3: 5, PAY_4: 6, PAY_5: 6, PAY_6: 5,
+        BILL_AMT1: 50000, BILL_AMT2: 60000, BILL_AMT3: 70000,
+        BILL_AMT4: 80000, BILL_AMT5: 90000, BILL_AMT6: 100000,
+        PAY_AMT1: 5000, PAY_AMT2: 0, PAY_AMT3: 1000,
+        PAY_AMT4: 0, PAY_AMT5: 0, PAY_AMT6: 0
+    };
+    Object.keys(data).forEach(k => document.getElementById(k).value = data[k]);
+});
+</script>
+
+</body>
+</html>

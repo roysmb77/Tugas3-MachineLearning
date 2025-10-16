@@ -1,0 +1,30 @@
+﻿# Virtual environment
+venv/
+env/
+.VENV/
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Jupyter
+.ipynb_checkpoints
+
+# Models / large files
+*.pkl
+*.h5
+*.joblib
+*.npz
+*.npy
+UCI_Credit_Card.csv
+
+# IDE/editor
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# env files
+.env
